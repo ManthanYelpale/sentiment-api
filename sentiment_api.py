@@ -39,6 +39,9 @@ def analyze(text: str):
             "compound": compound,
             "label": label
         }
+@app.get("/")
+def root():
+    return {"message": "API is live"}
 
 @app.post("/analyze_single")
 def analyze_single(input: TextInput):
@@ -47,3 +50,4 @@ def analyze_single(input: TextInput):
 @app.post("/analyze_batch")
 def analyze_batch(input: BatchInput):
     return [analyze(text) for text in input.texts]
+
