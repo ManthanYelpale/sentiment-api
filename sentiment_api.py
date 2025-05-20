@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
@@ -19,7 +18,6 @@ def load_model():
     model_name = "distilbert-base-uncased-finetuned-sst-2-english"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSequenceClassification.from_pretrained(model_name)
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     model.eval()
@@ -30,15 +28,13 @@ def analyze(text: str):
     with torch.no_grad():
         outputs = model(**inputs)
         probs = torch.softmax(outputs.logits, dim=1).cpu().numpy()[0]
-        compound = float(probs[2] - probs[0])
-        label = "positive" if probs[2] > probs[0] else "negative" if probs[0] > probs[2] else "neutral"
+        label = "positive" if probs[1] > probs[0] else "negative"
         return {
             "neg": float(probs[0]),
-            "neu": float(probs[1]),
-            "pos": float(probs[2]),
-            "compound": compound,
+            "pos": float(probs[1]),
             "label": label
         }
+
 @app.get("/")
 def root():
     return {"message": "API is live"}
@@ -50,4 +46,3 @@ def analyze_single(input: TextInput):
 @app.post("/analyze_batch")
 def analyze_batch(input: BatchInput):
     return [analyze(text) for text in input.texts]
-
