@@ -34,6 +34,7 @@ def analyze(text: str):
             "label": label
         }
 
+
 @app.get("/")
 def root():
     return {"message": "API is live"}
