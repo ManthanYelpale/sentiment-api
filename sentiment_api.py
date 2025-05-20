@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import List
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import os
 
 app = FastAPI()
 
@@ -12,15 +13,13 @@ class TextInput(BaseModel):
 class BatchInput(BaseModel):
     texts: List[str]
 
-@app.on_event("startup")
-def load_model():
-    global tokenizer, model, device
-    model_name = "distilbert-base-uncased-finetuned-sst-2-english"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    model.eval()
+# Load model globally
+model_name = "distilbert-base-uncased-finetuned-sst-2-english"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSequenceClassification.from_pretrained(model_name)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
+model.eval()
 
 def analyze(text: str):
     inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
@@ -46,3 +45,9 @@ def analyze_single(input: TextInput):
 @app.post("/analyze_batch")
 def analyze_batch(input: BatchInput):
     return [analyze(text) for text in input.texts]
+
+# ✅ Only for local development (Render ignores this block)
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("sentiment_api:app", host="0.0.0.0", port=port)
